@@ -3,7 +3,8 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from city.crud import get_all_cities, update_city, delete_city
+from city.crud import get_all_cities, update_city, delete_city, get_city_by_id
+from city.exceptions import InvalidCityIdException
 from db.session import get_db
 from city.schema import City, CityCreate
 
@@ -22,31 +23,25 @@ def create_city(db: Annotated[Session, Depends(get_db)], city_data: CityCreate):
 
 @router.get("/cities/{city_id}", response_model=City)
 def get_city(city_id: int, db: Annotated[Session, Depends(get_db)]):
-    result = get_city(db=db, city_id=city_id)
-
-    if not result:
+    city = get_city_by_id(db, city_id)
+    if not city:
         raise HTTPException(status_code=404, detail="City not found")
-
-    return result
+    return city
 
 
 @router.put("/cities/{city_id}", response_model=City)
-def get_city(city_id: int,
+def update_city(city_id: int,
              db: Annotated[Session, Depends(get_db)],
              city_data: CityCreate):
-    city_to_update = get_city(db=db, city_id=city_id)
-
-    if not city_to_update:
-        raise HTTPException(status_code=404, detail="City not found")
-
-    return update_city(db=db, city_id=city_id, city_data=city_data)
-
+    try:
+        return update_city(db=db, city_id=city_id,
+                                     city_data=city_data)
+    except InvalidCityIdException as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/cities/{city_id}", response_model=City)
 def get_city(city_id: int, db: Annotated[Session, Depends(get_db)]):
-    city_to_delete = get_city(db=db, city_id=city_id)
-
-    if not city_to_delete:
-        raise HTTPException(status_code=404, detail="City not found")
-
-    return delete_city(db=db, city_id=city_id)
+    try:
+        return delete_city(db=db, city_id=city_id)
+    except InvalidCityIdException as e:
+        raise HTTPException(status_code=404, detail=str(e))
