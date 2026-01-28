@@ -3,7 +3,8 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from city.crud import get_all_cities, update_city, delete_city, get_city_by_id
+from city.crud import get_all_cities, update_city, delete_city, get_city_by_id, \
+    create_city
 from city.exceptions import InvalidCityIdException
 from db.session import get_db
 from city.schema import City, CityCreate
@@ -17,7 +18,7 @@ def get_cities(db: Annotated[Session, Depends(get_db)]):
 
 
 @router.post("/cities/", response_model=City)
-def create_city(db: Annotated[Session, Depends(get_db)], city_data: CityCreate):
+def add_new_city(db: Annotated[Session, Depends(get_db)], city_data: CityCreate):
     return create_city(db=db, city_data=city_data)
 
 
@@ -40,7 +41,7 @@ def update_city(city_id: int,
         raise HTTPException(status_code=404, detail=str(e))
 
 @router.delete("/cities/{city_id}", response_model=City)
-def get_city(city_id: int, db: Annotated[Session, Depends(get_db)]):
+def delete_city_by_id(city_id: int, db: Annotated[Session, Depends(get_db)]):
     try:
         return delete_city(db=db, city_id=city_id)
     except InvalidCityIdException as e:
